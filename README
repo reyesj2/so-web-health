@@ -2,7 +2,7 @@
 This is repo / app is NOT officially supported by Security Onion Solutions.
 
 ## Overview
-AI generated flask app using Security Onion Pro API. Pulls grid nodes health and allows for rebooting nodes.
+AI generated flask app for pulling grid health metrics via the Security Onion Pro API.
 
 ## Setup
 
