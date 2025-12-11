@@ -1,0 +1,9 @@
+.env
+so-ca.crt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python

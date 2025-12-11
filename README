@@ -1,0 +1,25 @@
+# DISCLAIMER
+This is repo / app is NOT officially supported by Security Onion Solutions.
+
+## Overview
+AI generated flask app using Security Onion Pro API. Pulls grid nodes health and allows for rebooting nodes.
+
+## Setup
+
+1. Enable connect api https://docs.securityonion.net/en/2.4/connect.html#enabling-connect-api
+
+2. Give the new api client the following permissions
+ - Grid
+   - Read
+   - Write
+ - Nodes
+   - Read
+
+3. Download the grids CA cert and leave it named so-ca.crt in this projects root directory.
+  - This is available in the 'API clients' menu within SOC.
+
+4. Copy .env_example file to .env and update with client_id / client_secret / url_base values.
+
+5. Build and run the docker container using `./run-it.sh` OR run it using `flask run --host=localhost --port=8080`
+
+

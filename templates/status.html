@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SO Grid Health</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-body: "Inter", "Segoe UI", sans-serif;
+      --healthy: #1b9e5f;
+      --degraded: #d64545;
+      --background: rgba(20, 27, 34, 0.9);
+      --panel: rgba(255, 255, 255, 0.08);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --muted: rgba(255, 255, 255, 0.7);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 2.5rem 1rem 3rem;
+      font: 16px/1.45 var(--font-body);
+      background: radial-gradient(circle at top, #1f2a37, #0f172a);
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: min(960px, 100%);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    header .meta {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .status-card {
+      border-radius: 18px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .status-card.healthy {
+      border-color: rgba(27, 158, 95, 0.45);
+      box-shadow: 0 20px 45px rgba(27, 158, 95, 0.15);
+    }
+
+    .status-card.degraded {
+      border-color: rgba(214, 69, 69, 0.45);
+      box-shadow: 0 20px 45px rgba(214, 69, 69, 0.15);
+    }
+
+    .status-card .status-label {
+      font-size: 0.85rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .status-card .status-value {
+      font-size: clamp(2.2rem, 6vw, 3.4rem);
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .status-card .status-sub {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .panels {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-bottom: 2rem;
+    }
+
+    .panel {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .good-list li::before {
+      content: "✔";
+      color: var(--healthy);
+      margin-right: 0.5rem;
+    }
+
+    .bad-list li::before {
+      content: "⚠";
+      color: var(--degraded);
+      margin-right: 0.5rem;
+    }
+
+    .info-list li::before {
+      content: "ℹ";
+      color: #38bdf8;
+      margin-right: 0.5rem;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .panel-clickable {
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .panel-clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(148, 163, 184, 0.3);
+      border-color: rgba(148, 163, 184, 0.5);
+    }
+
+    .panel-clickable h2 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-clickable h2::after {
+      content: "→";
+      font-size: 1.2rem;
+      margin-left: 0.5rem;
+      opacity: 0.7;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .metric {
+      padding: 1rem;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .metric-label {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .metric-value {
+      font-size: 1.6rem;
+      font-weight: 600;
+    }
+
+    .detection-list {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .detection-card {
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.65);
+    }
+
+    .detection-card.ok {
+      border-color: rgba(27, 158, 95, 0.35);
+    }
+
+    .detection-card.degraded {
+      border-color: rgba(214, 69, 69, 0.45);
+    }
+
+    .detection-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+    }
+
+    .flag-list {
+      margin: 0;
+      padding-left: 1.1rem;
+      list-style: disc;
+    }
+
+    .error-card pre {
+      white-space: pre-wrap;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 1rem;
+      border-radius: 12px;
+      overflow-x: auto;
+    }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% set last_refresh_text = last_refreshed.strftime('%Y-%m-%d %H:%M:%S %Z') if last_refreshed else 'unknown' %}
+    <header>
+      <h1>SO Grid Health</h1>
+      <div class="meta">Auto-refreshing every 10s · Last refreshed {{ last_refresh_text }}</div>
+    </header>
+
+    {% if error %}
+      <div class="status-card degraded error-card">
+        <span class="status-label">Overall</span>
+        <span class="status-value">Unreachable</span>
+        <p class="status-sub">{{ error_message }}</p>
+        {% if error_details %}
+          <pre>{{ error_details }}</pre>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="status-card {{ summary.overall }}">
+        <span class="status-label">Overall</span>
+        <span class="status-value">{{ summary.overall|capitalize }}</span>
+        {% if token_expires_in is not none %}
+          <div class="status-sub">Token expires in {{ token_expires_in }}s</div>
+        {% endif %}
+      </div>
+
+      <section class="panels">
+        <div class="panel">
+          <h2>Highlights</h2>
+          {% if summary.highlights %}
+            <ul class="good-list">
+              {% for highlight in summary.highlights %}
+                <li>{{ highlight }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="muted">No highlights reported.</p>
+          {% endif %}
+        </div>
+        <div class="panel">
+          <h2>Info</h2>
+          {% if summary.notices %}
+            <ul class="info-list">
+              {% for notice in summary.notices %}
+                <li>{{ notice }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="muted">No informational notices.</p>
+          {% endif %}
+        </div>
+        <a href="/nodes" class="panel panel-clickable">
+          <h2>Issues</h2>
+          {% if summary.issues %}
+            <ul class="bad-list">
+              {% for issue in summary.issues %}
+                <li>{{ issue }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="muted">No issues detected.</p>
+          {% endif %}
+        </a>
+      </section>
+
+      <section class="panel">
+        <h2>Grid Overview</h2>
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Total Nodes</span>
+            <span class="metric-value">{{ summary.grid.total|default('—', true) }}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Unhealthy Nodes</span>
+            <span class="metric-value">{{ summary.grid.unhealthy|default('0', true) }}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Awaiting Reboot</span>
+            <span class="metric-value">{{ summary.grid.awaiting_reboot|default('0', true) }}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Events / Second</span>
+            <span class="metric-value">{{ summary.grid.eps|default('—', true) }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Detection Services</h2>
+        {% if summary.detections %}
+          <div class="detection-list">
+            {% for detection in summary.detections %}
+              <div class="detection-card {{ 'ok' if detection.ok else 'degraded' }}">
+                <h3>{{ detection.name }}</h3>
+                {% if detection.ok %}
+                  <p class="muted">All clear.</p>
+                {% else %}
+                  <p>Attention needed:</p>
+                  <ul class="flag-list">
+                    {% for flag in detection.bad_flags %}
+                      <li>{{ flag }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">No detection telemetry received.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    <footer>
+      Data supplied by /connect/grid/status · Auto-refresh every 10s
+    </footer>
+  </div>
+  <script>
+    setInterval(() => {
+      window.location.reload();
+    }, 10000);
+  </script>
+</body>
+</html>

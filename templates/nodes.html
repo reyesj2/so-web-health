@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SO Grid Nodes - Detailed View</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-body: "Inter", "Segoe UI", sans-serif;
+      --healthy: #1b9e5f;
+      --degraded: #d64545;
+      --reboot: #38bdf8;
+      --background: rgba(20, 27, 34, 0.9);
+      --panel: rgba(255, 255, 255, 0.08);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --muted: rgba(255, 255, 255, 0.7);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 2.5rem 1rem 3rem;
+      font: 16px/1.45 var(--font-body);
+      background: radial-gradient(circle at top, #1f2a37, #0f172a);
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: min(1600px, 100%);
+      max-width: 95%;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    header .meta {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      color: #f8fafc;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .back-link:hover {
+      background: rgba(15, 23, 42, 0.9);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .summary-card {
+      border-radius: 18px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .summary-metric {
+      text-align: center;
+    }
+
+    .summary-label {
+      font-size: 0.85rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .summary-value {
+      font-size: 2.5rem;
+      font-weight: 600;
+    }
+
+    .summary-value.unhealthy {
+      color: var(--degraded);
+    }
+
+    .summary-value.healthy {
+      color: var(--healthy);
+    }
+
+    .summary-value.reboot {
+      color: var(--reboot);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      margin: 2rem 0 1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .node-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1200px) {
+      .node-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .node-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .node-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .node-card.unhealthy {
+      border-color: rgba(214, 69, 69, 0.45);
+      box-shadow: 0 10px 25px rgba(214, 69, 69, 0.15);
+    }
+
+    .node-card.reboot {
+      border-color: rgba(56, 189, 248, 0.45);
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.15);
+    }
+
+    .node-card.healthy {
+      border-color: rgba(27, 158, 95, 0.35);
+    }
+
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .node-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+      word-break: break-word;
+      line-height: 1.3;
+    }
+
+    .node-badge {
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .node-badge.unhealthy {
+      background: rgba(214, 69, 69, 0.2);
+      color: var(--degraded);
+      border: 1px solid rgba(214, 69, 69, 0.4);
+    }
+
+    .node-badge.reboot {
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--reboot);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    .node-badge.healthy {
+      background: rgba(27, 158, 95, 0.2);
+      color: var(--healthy);
+      border: 1px solid rgba(27, 158, 95, 0.4);
+    }
+
+    .restart-badge {
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .restart-badge:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .restart-badge:active {
+      transform: scale(0.98);
+    }
+
+    .restart-badge:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .node-info {
+      display: grid;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .node-info-item {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .node-info-label {
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 100px;
+      font-size: 0.85rem;
+    }
+
+    .node-info-value {
+      font-size: 0.85rem;
+    }
+
+
+
+    .process-section {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .process-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 1rem 0;
+      color: #38bdf8;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .process-json {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .process-json pre {
+      margin: 0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+
+    .service-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .service-item {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .service-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .service-name {
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .service-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .service-details {
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding-left: 0.5rem;
+      border-left: 2px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .hidden-service {
+      display: none;
+    }
+
+    .expand-services-btn {
+      width: 100%;
+      padding: 0.5rem 1rem;
+      margin-top: 0.75rem;
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .expand-services-btn:hover {
+      background: rgba(148, 163, 184, 0.15);
+      border-color: rgba(148, 163, 184, 0.3);
+      color: #cbd5e1;
+    }
+
+    .expand-services-btn .expand-icon {
+      transition: transform 0.2s;
+      font-size: 0.7rem;
+    }
+
+    .expand-services-btn[data-expanded="true"] .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-indicator.running {
+      background: var(--healthy);
+      box-shadow: 0 0 8px rgba(27, 158, 95, 0.5);
+    }
+
+    .status-indicator.stopped {
+      background: var(--degraded);
+      box-shadow: 0 0 8px rgba(214, 69, 69, 0.5);
+    }
+
+    .status-indicator.unknown {
+      background: #94a3b8;
+    }
+
+    .error-card {
+      border-radius: 18px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(214, 69, 69, 0.45);
+      box-shadow: 0 20px 45px rgba(214, 69, 69, 0.15);
+    }
+
+    .error-card pre {
+      white-space: pre-wrap;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 1rem;
+      border-radius: 12px;
+      overflow-x: auto;
+    }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% set last_refresh_text = last_refreshed.strftime('%Y-%m-%d %H:%M:%S %Z') if last_refreshed else 'unknown' %}
+    
+    <a href="/" class="back-link">← Back to Dashboard</a>
+    
+    <header>
+      <h1>Grid Nodes - Detailed View</h1>
+      <div class="meta">Auto-refreshing every 10s · Last refreshed {{ last_refresh_text }}</div>
+    </header>
+
+    {% if error %}
+      <div class="error-card">
+        <span class="status-label">Error</span>
+        <span class="status-value">Unable to fetch node data</span>
+        <p>{{ error_message }}</p>
+        {% if error_details %}
+          <pre>{{ error_details }}</pre>
+        {% endif %}
+      </div>
+    {% else %}
+      {% set reboot_count = nodes|selectattr('needsReboot', 'equalto', true)|list|length if nodes else 0 %}
+      {% set healthy_count = total_nodes - unhealthy_count - reboot_count %}
+      
+      <div class="summary-card">
+        <div class="summary-metric">
+          <span class="summary-label">Total Nodes</span>
+          <span class="summary-value">{{ total_nodes }}</span>
+        </div>
+        <div class="summary-metric">
+          <span class="summary-label">Unhealthy Nodes</span>
+          <span class="summary-value unhealthy">{{ unhealthy_count }}</span>
+        </div>
+        <div class="summary-metric">
+          <span class="summary-label">Pending Reboot</span>
+          <span class="summary-value reboot">{{ reboot_count }}</span>
+        </div>
+        <div class="summary-metric">
+          <span class="summary-label">Healthy Nodes</span>
+          <span class="summary-value healthy">{{ healthy_count }}</span>
+        </div>
+      </div>
+
+      {% if nodes %}
+        <h2 class="section-title">All Nodes</h2>
+        <div class="node-grid">
+          {% for node in nodes %}
+            {% if node.isUnhealthy %}
+              {% set card_class = 'unhealthy' %}
+            {% elif node.needsReboot %}
+              {% set card_class = 'reboot' %}
+            {% else %}
+              {% set card_class = 'healthy' %}
+            {% endif %}
+            <div class="node-card {{ card_class }}">
+              <div class="node-header">
+                <h3 class="node-title">{{ node.id }}{% if node.description %} - {{ node.description }}{% endif %}</h3>
+                {% if node.needsReboot %}
+                  <button class="node-badge {{ card_class }} restart-badge" 
+                          data-node-id="{{ node.formattedId }}" 
+                          data-node-desc="{{ node.id }}{% if node.description %} - {{ node.description }}{% endif %}">
+                    {{ node.status|upper }}
+                  </button>
+                {% else %}
+                  <span class="node-badge {{ card_class }}">{{ node.status|upper }}</span>
+                {% endif %}
+              </div>
+              
+              <div class="node-info">
+                <div class="node-info-item">
+                  <span class="node-info-label">Address:</span>
+                  <span class="node-info-value">{{ node.address }}</span>
+                </div>
+                <div class="node-info-item">
+                  <span class="node-info-label">Role:</span>
+                  <span class="node-info-value">{{ node.role }}</span>
+                </div>
+                <div class="node-info-item">
+                  <span class="node-info-label">Connection:</span>
+                  <span class="node-info-value">{{ node.connectionStatus }}</span>
+                </div>
+                <div class="node-info-item">
+                  <span class="node-info-label">Model:</span>
+                  <span class="node-info-value">{{ node.model }}</span>
+                </div>
+                <div class="node-info-item">
+                  <span class="node-info-label">Version:</span>
+                  <span class="node-info-value">{{ node.version }}</span>
+                </div>
+                <div class="node-info-item">
+                  <span class="node-info-label">CPU Usage:</span>
+                  <span class="node-info-value">{{ "%.2f"|format(node.cpuUsedPct) }}%</span>
+                </div>
+                <div class="node-info-item">
+                  <span class="node-info-label">Memory Usage:</span>
+                  <span class="node-info-value">{{ "%.2f"|format(node.memoryUsedPct) }}%</span>
+                </div>
+                <div class="node-info-item">
+                  <span class="node-info-label">EPS:</span>
+                  <span class="node-info-value">{{ node.productionEps }} / {{ node.consumptionEps }}</span>
+                </div>
+                <div class="node-info-item">
+                  <span class="node-info-label">Uptime:</span>
+                  <span class="node-info-value">{{ node.uptimeFormatted }}</span>
+                </div>
+              </div>
+
+
+
+              {% if node.processJson %}
+                <div class="process-section">
+                  <h4 class="process-title">Service Status (processJson)</h4>
+                  
+                  {% if node.processJson.containers %}
+                    {% set total_services = node.processJson.containers|length %}
+                    <div class="service-list" data-node-id="{{ node.id }}">
+                      {% for container in node.processJson.containers %}
+                        <div class="service-item {{ 'hidden-service' if loop.index > 5 else '' }}" data-service-index="{{ loop.index }}">
+                          <div class="service-item-header">
+                            <span class="service-name">{{ container.Name }}</span>
+                            <div class="service-status">
+                              {% set status = container.Status|lower %}
+                              <span class="status-indicator {{ 'running' if 'running' in status else 'stopped' if 'exited' in status or 'stopped' in status else 'unknown' }}"></span>
+                              <span>{{ container.Status }}</span>
+                            </div>
+                          </div>
+                          {% if container.Details %}
+                            <div class="service-details">
+                              {{ container.Details }}
+                            </div>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                    {% if total_services > 5 %}
+                      <button class="expand-services-btn" data-node-id="{{ node.id }}" data-expanded="false">
+                        <span class="expand-text">Show {{ total_services - 5 }} more services</span>
+                        <span class="collapse-text" style="display: none;">Show less</span>
+                        <span class="expand-icon">▼</span>
+                      </button>
+                    {% endif %}
+                  {% else %}
+                    <div class="process-json">
+                      <pre>{{ node.processJson|tojson(indent=2) }}</pre>
+                    </div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <footer>
+      Data supplied by /connect/grid · Auto-refresh every 10s
+    </footer>
+  </div>
+  <script>
+    // Auto-refresh
+    let autoRefreshInterval = setInterval(() => {
+      window.location.reload();
+    }, 10000);
+
+    // Handle expand/collapse services
+    document.addEventListener('DOMContentLoaded', function() {
+      const expandButtons = document.querySelectorAll('.expand-services-btn');
+      
+      expandButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const nodeId = this.getAttribute('data-node-id');
+          const isExpanded = this.getAttribute('data-expanded') === 'true';
+          const serviceList = document.querySelector(`.service-list[data-node-id="${nodeId}"]`);
+          const hiddenServices = serviceList.querySelectorAll('.hidden-service');
+          const expandText = this.querySelector('.expand-text');
+          const collapseText = this.querySelector('.collapse-text');
+          
+          if (isExpanded) {
+            // Collapse
+            hiddenServices.forEach(service => {
+              service.style.display = 'none';
+            });
+            expandText.style.display = 'inline';
+            collapseText.style.display = 'none';
+            this.setAttribute('data-expanded', 'false');
+          } else {
+            // Expand
+            hiddenServices.forEach(service => {
+              service.style.display = 'flex';
+            });
+            expandText.style.display = 'none';
+            collapseText.style.display = 'inline';
+            this.setAttribute('data-expanded', 'true');
+          }
+        });
+      });
+      
+      // Handle restart badge clicks
+      const restartBadges = document.querySelectorAll('.restart-badge');
+      
+      restartBadges.forEach(badge => {
+        badge.addEventListener('click', async function() {
+          const nodeId = this.getAttribute('data-node-id');
+          const nodeDesc = this.getAttribute('data-node-desc');
+          
+          // Confirm action
+          if (!confirm(`Are you sure you want to restart node:\n${nodeDesc}?`)) {
+            return;
+          }
+          
+          // Disable badge and update text
+          this.disabled = true;
+          const originalText = this.textContent;
+          this.textContent = '⏳ RESTARTING';
+          
+          try {
+            const response = await fetch(`/api/node/${nodeId}/restart`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+              this.textContent = '✓ SENT';
+              this.style.background = 'rgba(27, 158, 95, 0.2)';
+              this.style.borderColor = 'rgba(27, 158, 95, 0.4)';
+              this.style.color = 'var(--healthy)';
+              
+              // Clear auto-refresh temporarily
+              clearInterval(autoRefreshInterval);
+              
+              // Reload after 3 seconds
+              setTimeout(() => {
+                window.location.reload();
+              }, 3000);
+            } else {
+              throw new Error(data.message || 'Failed to restart node');
+            }
+          } catch (error) {
+            this.textContent = '✗ FAILED';
+            this.style.background = 'rgba(214, 69, 69, 0.2)';
+            this.style.borderColor = 'rgba(214, 69, 69, 0.4)';
+            this.style.color = 'var(--degraded)';
+            
+            // Re-enable after 3 seconds
+            setTimeout(() => {
+              this.textContent = originalText;
+              this.disabled = false;
+              this.style.background = '';
+              this.style.borderColor = '';
+              this.style.color = '';
+            }, 3000);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
